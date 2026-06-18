@@ -15,36 +15,12 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response): void =
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, password, phone, otp } = req.body;
+    const { name, email, password, phone } = req.body;
     if (!name || !email || !password) { res.status(400).json({ success: false, message: 'Please provide name, email, and password.' }); return; }
     
     const existingUser = await User.findOne({ email });
     if (existingUser) { res.status(400).json({ success: false, message: 'An account with this email already exists.' }); return; }
 
-    if (!otp) {
-      // Phase 1: Generate & Send OTP
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      await OTP.deleteMany({ email });
-      await OTP.create({ email, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-
-      await sendOtpEmail(email, code);
-      if (phone) {
-        await sendOtpSms(phone, code);
-      }
-
-      const message = phone 
-        ? 'Verification OTP has been sent to your email and phone.'
-        : 'Verification OTP has been sent to your email.';
-      res.status(200).json({ success: true, requireOtp: true, message });
-      return;
-    }
-
-    // Phase 2: Verify OTP
-    const otpRecord = await OTP.findOne({ email, code: otp });
-    if (!otpRecord) { res.status(400).json({ success: false, message: 'Invalid or expired OTP.' }); return; }
-    
-    await OTP.deleteOne({ _id: otpRecord._id });
-    
     const user = await User.create({ name, email, phone, password, role: 'customer' });
     sendTokenResponse(user, 201, res);
   } catch (error) { next(error); }
@@ -52,7 +28,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, otp } = req.body;
+    const { email, password } = req.body;
     if (!email || !password) { res.status(400).json({ success: false, message: 'Please provide email and password.' }); return; }
     
     const user = await User.findOne({ email }).select('+password');
@@ -61,30 +37,6 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     const isMatch = await user.comparePassword(password);
     if (!isMatch) { res.status(401).json({ success: false, message: 'Invalid email or password.' }); return; }
 
-    if (!otp) {
-      // Phase 1: Generate & Send OTP
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      await OTP.deleteMany({ email });
-      await OTP.create({ email, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-
-      await sendOtpEmail(email, code);
-      if (user.phone) {
-        await sendOtpSms(user.phone, code);
-      }
-
-      const message = user.phone 
-        ? 'Verification OTP has been sent to your email and phone.'
-        : 'Verification OTP has been sent to your email.';
-      res.status(200).json({ success: true, requireOtp: true, message });
-      return;
-    }
-
-    // Phase 2: Verify OTP
-    const otpRecord = await OTP.findOne({ email, code: otp });
-    if (!otpRecord) { res.status(400).json({ success: false, message: 'Invalid or expired OTP.' }); return; }
-    
-    await OTP.deleteOne({ _id: otpRecord._id });
-    
     sendTokenResponse(user, 200, res);
   } catch (error) { next(error); }
 };

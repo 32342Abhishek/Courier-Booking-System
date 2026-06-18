@@ -9,8 +9,8 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string, otp?: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
-  register: (name: string, email: string, password: string, phone?: string, otp?: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
+  login: (email: string, password: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
   logout: () => void;
 }
 
@@ -38,20 +38,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
   };
 
-  const login = async (email: string, password: string, otp?: string) => {
-    const res = await authAPI.login({ email, password, otp });
-    if (res.data.requireOtp) {
-      return { requireOtp: true };
-    }
+  const login = async (email: string, password: string) => {
+    const res = await authAPI.login({ email, password });
     saveAuth(res.data.token, res.data.user);
     return { success: true };
   };
 
-  const register = async (name: string, email: string, password: string, phone?: string, otp?: string) => {
-    const res = await authAPI.register({ name, email, password, phone, otp });
-    if (res.data.requireOtp) {
-      return { requireOtp: true };
-    }
+  const register = async (name: string, email: string, password: string, phone?: string) => {
+    const res = await authAPI.register({ name, email, password, phone });
     saveAuth(res.data.token, res.data.user);
     return { success: true };
   };
