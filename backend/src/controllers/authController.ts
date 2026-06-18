@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import OTP from '../models/OTP';
 import { AuthRequest } from '../middleware/auth';
+import { sendOtpEmail, sendOtpSms } from '../utils/otpService';
 
 const signToken = (id: string): string =>
   jwt.sign({ id }, process.env.JWT_SECRET as string, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions);
@@ -26,12 +27,10 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       await OTP.deleteMany({ email });
       await OTP.create({ email, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
 
-      console.log(`\n--------------------------------------------`);
-      console.log(`✉️  [OTP SERVICE] Register verification code for ${email}: ${code}`);
+      await sendOtpEmail(email, code);
       if (phone) {
-        console.log(`📱 [SMS SERVICE] Register verification code sent to phone ${phone}: ${code}`);
+        await sendOtpSms(phone, code);
       }
-      console.log(`--------------------------------------------\n`);
 
       const message = phone 
         ? 'Verification OTP has been sent to your email and phone.'
@@ -68,12 +67,10 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       await OTP.deleteMany({ email });
       await OTP.create({ email, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
 
-      console.log(`\n--------------------------------------------`);
-      console.log(`✉️  [OTP SERVICE] Login verification code for ${email}: ${code}`);
+      await sendOtpEmail(email, code);
       if (user.phone) {
-        console.log(`📱 [SMS SERVICE] Login verification code sent to phone ${user.phone}: ${code}`);
+        await sendOtpSms(user.phone, code);
       }
-      console.log(`--------------------------------------------\n`);
 
       const message = user.phone 
         ? 'Verification OTP has been sent to your email and phone.'
