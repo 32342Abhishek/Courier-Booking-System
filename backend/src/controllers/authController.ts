@@ -1,0 +1,54 @@
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import { AuthRequest } from '../middleware/auth';
+
+const signToken = (id: string): string =>
+  jwt.sign({ id }, process.env.JWT_SECRET as string, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions);
+
+const sendTokenResponse = (user: any, statusCode: number, res: Response): void => {
+  const token = signToken(user._id.toString());
+  res.status(statusCode).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+};
+
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) { res.status(400).json({ success: false, message: 'Please provide name, email, and password.' }); return; }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) { res.status(400).json({ success: false, message: 'An account with this email already exists.' }); return; }
+    const user = await User.create({ name, email, password, role: 'customer' });
+    sendTokenResponse(user, 201, res);
+  } catch (error) { next(error); }
+};
+
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) { res.status(400).json({ success: false, message: 'Please provide email and password.' }); return; }
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) { res.status(401).json({ success: false, message: 'Invalid email or password.' }); return; }
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) { res.status(401).json({ success: false, message: 'Invalid email or password.' }); return; }
+    sendTokenResponse(user, 200, res);
+  } catch (error) { next(error); }
+};
+
+export const getMe = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = await User.findById(req.user?.id);
+    if (!user) { res.status(404).json({ success: false, message: 'User not found.' }); return; }
+    res.status(200).json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } });
+  } catch (error) { next(error); }
+};
+
+export const createAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { name, email, password, adminSecret } = req.body;
+    if (adminSecret !== process.env.JWT_SECRET) { res.status(403).json({ success: false, message: 'Invalid admin secret.' }); return; }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) { res.status(400).json({ success: false, message: 'User already exists.' }); return; }
+    const user = await User.create({ name, email, password, role: 'admin' });
+    sendTokenResponse(user, 201, res);
+  } catch (error) { next(error); }
+};
