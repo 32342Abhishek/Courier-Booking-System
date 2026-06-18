@@ -6,7 +6,7 @@ import { generateTrackingNumber } from '../utils/trackingGenerator';
 
 export const createBooking = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { senderName, senderPhone, senderAddress, receiverName, receiverPhone, receiverAddress, packageType, packageWeight, packageImage, calculatedPrice } = req.body;
+    const { senderName, senderPhone, senderAddress, receiverName, receiverPhone, receiverAddress, packageType, packageWeight, packageImage, calculatedPrice, paymentStatus, paymentMethod, paymentTransactionId } = req.body;
     if (!senderName || !senderPhone || !senderAddress || !receiverName || !receiverPhone || !receiverAddress || !packageType || !packageWeight) {
       res.status(400).json({ success: false, message: 'All fields are required.' }); return;
     }
@@ -24,6 +24,9 @@ export const createBooking = async (req: AuthRequest, res: Response, next: NextF
       packageWeight, 
       packageImage: packageImage || '',
       calculatedPrice: calculatedPrice || 0,
+      paymentStatus: paymentStatus || 'Pending',
+      paymentMethod,
+      paymentTransactionId: paymentTransactionId || '',
       status: 'Pending' 
     });
     res.status(201).json({ success: true, data: booking });

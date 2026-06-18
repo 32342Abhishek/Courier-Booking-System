@@ -11,7 +11,7 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (token) config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -23,8 +23,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -32,10 +32,10 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  register: (data: { name: string; email: string; password: string }) => api.post('/auth/register', data),
-  login: (data: { email: string; password: string }) => api.post('/auth/login', data),
+  register: (data: { name: string; email: string; password: string; phone?: string; otp?: string }) => api.post('/auth/register', data),
+  login: (data: { email: string; password: string; otp?: string }) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
-  createAdmin: (data: { name: string; email: string; password: string; adminSecret: string }) => api.post('/auth/create-admin', data),
+  createAdmin: (data: { name: string; email: string; password: string; adminSecret: string; otp?: string }) => api.post('/auth/create-admin', data),
 };
 
 export const bookingsAPI = {
@@ -50,6 +50,9 @@ export const bookingsAPI = {
     packageWeight: number;
     packageImage?: string;
     calculatedPrice?: number;
+    paymentStatus?: string;
+    paymentMethod?: string;
+    paymentTransactionId?: string;
   }) => api.post('/bookings', data),
   getMyBookings: () => api.get('/bookings/my'),
   getAllBookings: () => api.get('/bookings'),

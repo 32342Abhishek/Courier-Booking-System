@@ -13,6 +13,8 @@ function LoginForm() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState('');
 
   // Show success message if redirected after admin registration
   const justRegistered = searchParams.get('registered');
@@ -28,12 +30,16 @@ function LoginForm() {
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent, isOtpSubmit = false) => {
+    if (e) e.preventDefault();
     if (!form.email || !form.password) { setError('Please fill in all fields.'); return; }
     setBusy(true);
+    setError('');
     try {
-      await login(form.email, form.password);
+      const res = await login(form.email, form.password, isOtpSubmit ? otp : undefined);
+      if (res && res.requireOtp) {
+        setShowOtp(true);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
@@ -114,6 +120,91 @@ function LoginForm() {
           <Link href="/register" style={{ color: '#818cf8', fontWeight: 600 }}>Create one</Link>
         </p>
       </div>
+
+      {/* ── OTP Verification Modal ── */}
+      {showOtp && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000, fontFamily: "'Inter', sans-serif"
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 380, background: 'var(--surface)',
+            border: '1px solid var(--border)', borderRadius: 20, padding: 30,
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', textAlign: 'center',
+            position: 'relative'
+          }}>
+            <button 
+              type="button"
+              onClick={() => { setShowOtp(false); setOtp(''); }}
+              style={{
+                position: 'absolute', top: 20, right: 20,
+                background: 'none', border: 'none', color: 'var(--muted)',
+                cursor: 'pointer', fontSize: 18
+              }}
+            >✕</button>
+
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 18, margin: '0 auto 16px'
+            }}>🔑</div>
+
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Enter Verification Code</h3>
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>
+              A 6-digit OTP code has been sent to <span style={{ color: 'var(--text)', fontWeight: 500 }}>{form.email}</span> (and registered phone)
+            </p>
+
+            <form onSubmit={e => handleSubmit(e, true)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <input
+                type="text"
+                placeholder="000000"
+                value={otp}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 6) setOtp(val);
+                }}
+                className="input"
+                style={{
+                  textAlign: 'center', fontSize: 24, letterSpacing: '8px',
+                  fontWeight: 700, fontFamily: 'monospace', padding: '12px',
+                  color: 'var(--text)', background: 'var(--surface2)', border: '1px solid var(--border)',
+                  borderRadius: 10
+                }}
+                disabled={busy}
+                required
+              />
+
+              {error && (
+                <p style={{ fontSize: 12, color: 'var(--red)', margin: 0, textAlign: 'left' }}>
+                  <span>✕</span> {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={busy || otp.length !== 6}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '12px' }}
+              >
+                {busy ? <><div className="spinner" />Verifying…</> : 'Verify & Sign In'}
+              </button>
+
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+                Didn't receive code?{' '}
+                <button
+                  type="button"
+                  onClick={e => handleSubmit(e, false)}
+                  style={{
+                    background: 'none', border: 'none', color: '#818cf8',
+                    cursor: 'pointer', fontWeight: 600, padding: 0
+                  }}
+                >Resend OTP</button>
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

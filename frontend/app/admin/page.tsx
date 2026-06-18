@@ -626,7 +626,7 @@ function Content() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr>
-                        {['Booking ID', 'Customer', 'Sender', 'Receiver', 'Package', 'Weight', 'Status', 'Date', 'Actions'].map(h => (
+                        {['Booking ID', 'Customer', 'Sender', 'Receiver', 'Package', 'Weight', 'Price', 'Payment', 'Status', 'Date', 'Actions'].map(h => (
                           <th key={h} style={S.th}>{h}</th>
                         ))}
                       </tr>
@@ -650,6 +650,19 @@ function Content() {
                             <td style={{ ...S.td, color: '#cbd5e1', fontWeight: 500 }}>{b.receiverName}</td>
                             <td style={S.td}>{b.packageType}</td>
                             <td style={S.td}>{b.packageWeight} kg</td>
+                            <td style={{ ...S.td, fontFamily: 'monospace' }}>₹{b.calculatedPrice || 0}</td>
+                            <td style={S.td}>
+                              <span style={{ 
+                                fontSize: 11, 
+                                background: b.paymentStatus === 'Paid' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', 
+                                color: b.paymentStatus === 'Paid' ? '#34d399' : '#f87171', 
+                                padding: '3px 8px', 
+                                borderRadius: 6, 
+                                fontWeight: 500 
+                              }}>
+                                {b.paymentStatus === 'Paid' ? `Paid (${b.paymentMethod || 'Card'})` : 'Unpaid'}
+                              </span>
+                            </td>
                             <td style={S.td}><Pill status={b.status} /></td>
                             <td style={{ ...S.td, fontSize: 11, color: '#334155' }}>{fmt(b.createdAt)}</td>
                             <td style={S.td}>

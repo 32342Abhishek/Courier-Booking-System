@@ -154,7 +154,7 @@ function Content() {
               <table className="data-table">
                 <thead><tr>
                   <th>Booking ID</th><th>Receiver</th><th>Package Type</th>
-                  <th>Weight</th><th>Status</th><th>Tracking No.</th><th>Date</th>
+                  <th>Weight</th><th>Price</th><th>Payment</th><th>Status</th><th>Tracking No.</th><th>Date</th>
                 </tr></thead>
                 <tbody>
                   {filteredBookings.map(b => {
@@ -165,6 +165,19 @@ function Content() {
                         <td style={{ color: 'var(--text)', fontWeight: 500 }}>{b.receiverName}</td>
                         <td>{b.packageType}</td>
                         <td>{b.packageWeight} kg</td>
+                        <td style={{ fontFamily: 'monospace', fontSize: 12 }}>₹{b.calculatedPrice || 0}</td>
+                        <td>
+                          <span style={{ 
+                            fontSize: 11, 
+                            background: b.paymentStatus === 'Paid' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', 
+                            color: b.paymentStatus === 'Paid' ? '#10b981' : '#ef4444', 
+                            padding: '3px 8px', 
+                            borderRadius: 6, 
+                            fontWeight: 500 
+                          }}>
+                            {b.paymentStatus === 'Paid' ? `Paid (${b.paymentMethod || 'Card'})` : 'Unpaid'}
+                          </span>
+                        </td>
                         <td><StatusBadge status={b.status} /></td>
                         <td>{ship
                           ? <Link href={`/tracking?q=${ship.trackingNumber}`} style={{ fontFamily: 'monospace', fontSize: 11, color: '#22d3ee', textDecoration: 'underline' }}>{ship.trackingNumber}</Link>

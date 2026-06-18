@@ -8,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: 'customer' | 'admin';
 }
 
@@ -25,6 +26,9 @@ export interface Booking {
   packageWeight: number;
   packageImage?: string;
   calculatedPrice?: number;
+  paymentStatus?: 'Pending' | 'Paid';
+  paymentMethod?: 'Card' | 'UPI' | 'Net Banking';
+  paymentTransactionId?: string;
   status: BookingStatus;
   shipment?: Shipment | string | null;
   createdAt: string;

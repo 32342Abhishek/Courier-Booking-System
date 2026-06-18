@@ -9,8 +9,8 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, otp?: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
+  register: (name: string, email: string, password: string, phone?: string, otp?: string) => Promise<{ requireOtp?: boolean; success?: boolean }>;
   logout: () => void;
 }
 
@@ -22,8 +22,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const storedToken = sessionStorage.getItem('token');
+    const storedUser = sessionStorage.getItem('user');
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
@@ -32,25 +32,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const saveAuth = (tokenValue: string, userData: User) => {
-    localStorage.setItem('token', tokenValue);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', tokenValue);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     setToken(tokenValue);
     setUser(userData);
   };
 
-  const login = async (email: string, password: string) => {
-    const res = await authAPI.login({ email, password });
+  const login = async (email: string, password: string, otp?: string) => {
+    const res = await authAPI.login({ email, password, otp });
+    if (res.data.requireOtp) {
+      return { requireOtp: true };
+    }
     saveAuth(res.data.token, res.data.user);
+    return { success: true };
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const res = await authAPI.register({ name, email, password });
+  const register = async (name: string, email: string, password: string, phone?: string, otp?: string) => {
+    const res = await authAPI.register({ name, email, password, phone, otp });
+    if (res.data.requireOtp) {
+      return { requireOtp: true };
+    }
     saveAuth(res.data.token, res.data.user);
+    return { success: true };
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setToken(null);
     setUser(null);
     window.location.href = '/login';

@@ -21,6 +21,9 @@ router.post(
     body('packageWeight').isFloat({ gt: 0 }).withMessage('Package weight must be a number greater than 0.'),
     body('packageImage').optional().trim(),
     body('calculatedPrice').optional().isFloat({ min: 0 }).withMessage('Calculated price must be a non-negative number.'),
+    body('paymentStatus').optional().isIn(['Pending', 'Paid']).withMessage('Payment status must be Pending or Paid.'),
+    body('paymentMethod').optional().isIn(['Card', 'UPI', 'Net Banking']).withMessage('Invalid payment method.'),
+    body('paymentTransactionId').optional().trim(),
     validateResult
   ],
   createBooking

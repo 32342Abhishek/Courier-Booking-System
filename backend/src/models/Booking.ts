@@ -16,6 +16,9 @@ export interface IBooking extends Document {
   packageWeight: number;
   packageImage?: string;
   calculatedPrice?: number;
+  paymentStatus?: 'Pending' | 'Paid';
+  paymentMethod?: 'Card' | 'UPI' | 'Net Banking';
+  paymentTransactionId?: string;
   status: BookingStatus;
   shipment?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -36,6 +39,9 @@ const BookingSchema = new Schema<IBooking>(
     packageWeight: { type: Number, required: true, min: [0.1, 'Weight must be at least 0.1 kg'], max: [1000, 'Weight cannot exceed 1000 kg'] },
     packageImage: { type: String, default: '' },
     calculatedPrice: { type: Number, default: 0 },
+    paymentStatus: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' },
+    paymentMethod: { type: String, enum: ['Card', 'UPI', 'Net Banking'] },
+    paymentTransactionId: { type: String, default: '' },
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
     shipment: { type: Schema.Types.ObjectId, ref: 'Shipment', default: null },
   },
